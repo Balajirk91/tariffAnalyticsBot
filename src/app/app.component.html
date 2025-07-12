@@ -19,7 +19,9 @@
         #lastUserMessageElem
       >
         <div class="message-body">{{ m.body.message }}</div>
-        <div class="message-timestamp">{{ m.timeStamp | date: 'shortTime' }}</div>
+        <div class="message-timestamp">
+          {{ m.timeStamp | date : "shortTime" }}
+        </div>
       </div>
 
       <!-- Last bot message -->
@@ -29,7 +31,60 @@
         #lastBotMessageElem
       >
         <div class="message-body">{{ m.body.message }}</div>
-        <div class="message-timestamp">{{ m.timeStamp | date: 'shortTime' }}</div>
+        <form
+          *ngIf="!m.isRequest && m.body.formFields"
+          [formGroup]="formGroup"
+          class="inline-form"
+          (ngSubmit)="onFormSubmit()"
+        >
+          <div *ngFor="let field of m.body.formFields">
+            <label>{{ field.label }}</label>
+
+            <ng-container [ngSwitch]="field.type">
+              <input
+                *ngSwitchCase="'text'"
+                [formControlName]="field.name"
+                type="text"
+              />
+              <input
+                *ngSwitchCase="'number'"
+                [formControlName]="field.name"
+                type="number"
+              />
+              <textarea
+                *ngSwitchCase="'textarea'"
+                [formControlName]="field.name"
+              ></textarea>
+              <input
+                *ngSwitchDefault
+                [formControlName]="field.name"
+                type="text"
+              />
+            </ng-container>
+
+            <div
+              class="validation-error"
+              *ngIf="
+                formGroup.get(field.name)?.invalid &&
+                formGroup.get(field.name)?.touched
+              "
+            >
+              This field is required.
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="form-submit-btn"
+            [disabled]="formGroup.invalid || isLoading"
+          >
+            Submit
+          </button>
+        </form>
+
+        <div class="message-timestamp">
+          {{ m.timeStamp | date : "shortTime" }}
+        </div>
       </div>
 
       <!-- All previous messages -->
@@ -40,7 +95,9 @@
         [class.bot]="!m.isRequest"
       >
         <div class="message-body">{{ m.body.message }}</div>
-        <div class="message-timestamp">{{ m.timeStamp | date: 'shortTime' }}</div>
+        <div class="message-timestamp">
+          {{ m.timeStamp | date : "shortTime" }}
+        </div>
       </div>
     </ng-container>
 
@@ -72,7 +129,11 @@
         </button>
       </div>
 
-      <label class="file-upload-btn" [class.disabled]="isLoading" title="Attach file">
+      <label
+        class="file-upload-btn"
+        [class.disabled]="isLoading"
+        title="Attach file"
+      >
         <input
           type="file"
           (change)="onFileSelected($event)"

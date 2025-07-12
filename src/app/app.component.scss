@@ -315,3 +315,49 @@
   color:#ccc;
   cursor: not-allowed;
 }
+
+.inline-form {
+  margin-top: 10px;
+}
+
+.inline-form label {
+  display: block;
+  font-weight: 600;
+  margin-top: 8px;
+  margin-bottom: 4px;
+}
+
+.inline-form input,
+.inline-form textarea {
+  width: 100%;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.inline-form .validation-error {
+  color: red;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.form-submit-btn {
+  background: #351c15;
+  color: #ffb500;
+  border: none;
+  padding: 8px 16px;
+  margin-top: 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.form-submit-btn:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+}
+
+

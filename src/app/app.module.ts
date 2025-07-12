@@ -5,7 +5,7 @@ import { AppRoutingModule } from './app-routing.module';  // Optional if you hav
 import { AppComponent } from './app.component';
 import { DxButtonModule, DxChatModule } from 'devextreme-angular';
 import { AppService } from './app.service';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
@@ -16,7 +16,8 @@ import { HttpClientModule } from '@angular/common/http';
     BrowserModule,
     AppRoutingModule,
     FormsModule,
-    HttpClientModule
+    HttpClientModule,
+    ReactiveFormsModule
   ],
   providers: [AppService],
   bootstrap: [AppComponent],

@@ -8,6 +8,7 @@ interface Message {
   body: {
     message: string;
     userid: any;
+    formFields?: Fields[];
   };
   isRequest: boolean;
   timeStamp: number;
@@ -37,6 +38,7 @@ export class AppComponent implements OnInit {
   selectedFile: File | null = null;
   generatedUserId: any;
   formGroup: any;
+  formGroupFields = [];
 
   constructor(private myService: AppService,private formbuilder: FormBuilder) {}
   // Scroll to latest user request
@@ -93,6 +95,34 @@ export class AppComponent implements OnInit {
     }
   }
 
+  onFormSubmit() {
+  if (this.formGroup.invalid) {
+    this.formGroup.markAllAsTouched();
+    return;
+  }
+
+  const formValues = this.formGroup.value;
+
+  // Convert values to "Label: value" format
+  const messageText = Object.entries(formValues)
+    .map(([key, value]) => `${this.toLabel(key)}: ${value}`)
+    .join(', ');
+
+  this.newMsg = messageText;
+  this.sendMessage();
+  // Optionally clear the form after submission
+  this.formGroup = null;
+  this.formGroupFields = [];
+}
+
+toLabel(str: string): string {
+  return str
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/^./, c => c.toUpperCase());
+}
+
+
   sendMessage() {
     if ((!this.newMsg.trim() && !this.selectedFile) || this.isLoading) return;
 
@@ -116,16 +146,81 @@ export class AppComponent implements OnInit {
     const sendToAI = (prompt: any) => {
       this.myService.sendToFoundry(prompt).subscribe({
         next: async (response) => {
+          this.isLoading = false;
+          const mockresponse = {  
+  "type": "form_request",  
+  "fields": [  
+    {  
+      "label": "Exporter Name",  
+      "name": "exporter_name",  
+      "type": "text",  
+      "required": true  
+    },  
+    {  
+      "label": "Exporter Address",  
+      "name": "exporter_address",  
+      "type": "textarea",  
+      "required": true  
+    },  
+    {  
+      "label": "Importer Name",  
+      "name": "importer_name",  
+      "type": "text",  
+      "required": true  
+    },  
+    {  
+      "label": "Importer Address",  
+      "name": "importer_address",  
+      "type": "textarea",  
+      "required": true  
+    },  
+    {  
+      "label": "HS Code",  
+      "name": "hs_code",  
+      "type": "text",  
+      "required": true  
+    },  
+    {  
+      "label": "Quantity",  
+      "name": "quantity",  
+      "type": "number",  
+      "required": true  
+    },  
+    {  
+      "label": "Value",  
+      "name": "value",  
+      "type": "number",  
+      "required": true  
+    },  
+    {  
+      "label": "Incoterm",  
+      "name": "incoterm",  
+      "type": "text",  
+      "required": true  
+    },  
+    {  
+      "label": "Currency",  
+      "name": "currency",  
+      "type": "text",  
+      "required": true  
+    }  
+  ],  
+  "preset": {  
+    "exporting_country": "Russia",  
+    "importing_country": "India"  
+  }  
+}
+          const formGroup = await this.buildFormFromAIResponse(mockresponse);
+          this.formGroup = formGroup;
           this.messages.push({
             body: {
               message: response,
-              userid: this.generatedUserId
+              userid: this.generatedUserId,
+              formFields: mockresponse?.fields ?? null
             },
             isRequest: false,
             timeStamp: Date.now(),
           });
-          this.isLoading = false;
-          this.formGroup = await this.buildFormFromAIResponse(response);
           console.log("this.formGroup", this.formGroup);
           
         },
