@@ -1,0 +1,109 @@
+<div class="chatbot-container">
+  <div class="chat-header">
+    <h2 class="title">Invoice Assistant</h2>
+    <button
+      class="clear-chat-btn"
+      (click)="clearChatHistory()"
+      [disabled]="messages.length <= 1"
+    >
+      Clear Chat
+    </button>
+  </div>
+
+  <div class="chat-messages">
+    <ng-container *ngFor="let m of messages; let i = index">
+      <!-- Last user message -->
+      <div
+        *ngIf="i === messages.length - 1 && m.isRequest"
+        class="chat-message user"
+        #lastUserMessageElem
+      >
+        <div class="message-body">{{ m.body.message }}</div>
+        <div class="message-timestamp">{{ m.timeStamp | date: 'shortTime' }}</div>
+      </div>
+
+      <!-- Last bot message -->
+      <div
+        *ngIf="i === messages.length - 1 && !m.isRequest"
+        class="chat-message bot"
+        #lastBotMessageElem
+      >
+        <div class="message-body">{{ m.body.message }}</div>
+        <div class="message-timestamp">{{ m.timeStamp | date: 'shortTime' }}</div>
+      </div>
+
+      <!-- All previous messages -->
+      <div
+        *ngIf="i !== messages.length - 1"
+        class="chat-message"
+        [class.user]="m.isRequest"
+        [class.bot]="!m.isRequest"
+      >
+        <div class="message-body">{{ m.body.message }}</div>
+        <div class="message-timestamp">{{ m.timeStamp | date: 'shortTime' }}</div>
+      </div>
+    </ng-container>
+
+    <div *ngIf="isLoading" class="chat-message bot loader">
+      <div class="dots"><span></span><span></span><span></span></div>
+    </div>
+  </div>
+
+  <div class="chat-input-wrapper">
+    <div class="chat-input-with-file">
+      <textarea
+        [(ngModel)]="newMsg"
+        (keydown.enter)="handleEnter($event)"
+        placeholder="Type here..."
+        [disabled]="isLoading"
+        rows="1"
+      ></textarea>
+
+      <div class="selected-file" *ngIf="selectedFile">
+        <span class="file-icon">📎</span>
+        {{ selectedFile.name }}
+        <button
+          type="button"
+          class="remove-file-btn"
+          (click)="selectedFile = null"
+          [disabled]="isLoading"
+        >
+          ✖
+        </button>
+      </div>
+
+      <label class="file-upload-btn" [class.disabled]="isLoading" title="Attach file">
+        <input
+          type="file"
+          (change)="onFileSelected($event)"
+          [disabled]="isLoading"
+          hidden
+        />
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="feather feather-paperclip"
+        >
+          <path
+            d="M21.44 11.05l-9.19 9.2a5.53 5.53 0 0 1-7.82-7.82l9.2-9.19a3.49 3.49 0 0 1 4.95 4.95l-8.49 8.5a1.75 1.75 0 0 1-2.48-2.48l7.35-7.35"
+          />
+        </svg>
+      </label>
+    </div>
+
+    <button
+      class="send-btn"
+      (click)="sendMessage()"
+      [disabled]="(!newMsg.trim() && !selectedFile) || isLoading"
+    >
+      Send
+    </button>
+  </div>
+</div>
