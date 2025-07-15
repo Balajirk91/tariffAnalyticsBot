@@ -32,7 +32,8 @@ export class AppService {
     const body = {
       content: prompt.message,
       userid: prompt.userid,
-      base64pdf: prompt.base64pdf
+      base64pdf: prompt.base64pdf,
+      thread_id: prompt.thread_id || ''
     };
 
     console.log(body);
@@ -43,7 +44,7 @@ export class AppService {
     // return mockResponse
 
     return this.http.post<any>(this.endpoint, body, { headers }).pipe(
-      map(response => response.response ?? 'No response')
+      map(response => response ?? 'No response')
     );
   }
 
@@ -54,7 +55,7 @@ export class AppService {
     
 
     return this.http.post<any>(this.downloadendpoint, prompt, { headers }).pipe(
-      map(response => response.response ?? 'No response')
+      map(response => response ?? 'No response')
     );
   }
 

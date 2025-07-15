@@ -47,6 +47,8 @@ export class AppComponent implements OnInit {
   formGroup: any;
   formGroupFields: Field[] = [];
   base64String: any;
+  threadid: string = '';
+  downloadresponse: string = '';
 
   constructor(
     private myService: AppService,
@@ -175,7 +177,8 @@ export class AppComponent implements OnInit {
   const userText = {
     message: this.newMsg.trim(),
     userid: this.generatedUserId,
-    base64pdf: this.base64String || ''
+    base64pdf: this.base64String || '',
+    thread_id: this.threadid || ''
   };
 
   // Show user message first
@@ -183,7 +186,7 @@ export class AppComponent implements OnInit {
     body: {
       message: userText.message || '[File uploaded]',
       userid: userText.userid,
-      base64pdf: this.base64String || ''
+      base64pdf: this.base64String || '',
     },
     isRequest: true,
     timeStamp: Date.now(),
@@ -197,10 +200,14 @@ export class AppComponent implements OnInit {
     this.base64String = '';
       this.myService.sendToFoundry(prompt).subscribe({
         next: (response: any) => {
+          console.log(response, response);
+          
           this.isLoading = false;
+          this.threadid = response.thread_id;
+          this.downloadresponse = response.response;
           this.messages.push({
             body: {
-              message: response,
+              message: response.response,
               userid: this.generatedUserId,
               formFields: response?.fields ?? null
             },
@@ -267,7 +274,7 @@ export class AppComponent implements OnInit {
 
     const urlRegex = /(https?:\/\/[^\s]+)/g;
 
-    return message.response.replace(
+    return message.replace(
       urlRegex,
       `<a href="$1" download target="_blank" rel="noopener noreferrer">Download PDF</a>`
     );
@@ -275,13 +282,14 @@ export class AppComponent implements OnInit {
 
   download() {
     const prompt = {
-    "response": "{\n    \"shipper_name\": \"KKG Exporters\",\n    \"shipper_address\": \"14, Mount Road, Chennai, India\",\n    \"shipper_contact\": \"KKG\",\n    \"shipper_phone\": \"+12315132\",\n    \"consignee_name\": \"Balaji Importers\",\n    \"consignee_address\": \"15, Elizabeth Road, Germany\",\n    \"consignee_taxid\": \"NA\",\n    \"consignee_contact\": \"Balaji\",\n    \"consignee_phone\": \"+44123123\",\n    \"producer_name\": \"KKG Exporters\",\n    \"producer_address\": \"14, Mount Road, Chennai, India\",\n    \"sold_to_party\": \"Balaji Importers\",\n    \"sold_to_party_taxid\": \"NA\",\n    \"sold_to_party_contact\": \"Balaji\",\n    \"sold_to_party_phone\": \"+44123123\",\n    \"transaction_party\": \"Not Related\",\n    \"gross_weight\": \"200kg\",\n    \"terms_of_sale\": \"CIF\",\n    \"brokerage_charges\": \"Importer\",\n    \"invoice_number\": \"INV-2024-001\",\n    \"invoice_date\": \"2024-06-13\",\n    \"currency\": \"Rupees\",\n    \"items\": [\n        {\n            \"country_of_origin\": \"India\",\n            \"description\": \"960810 - Ball point pens clickable blue ink\",\n            \"quantity\": 100000,\n            \"unit_cost\": 5.0,\n            \"total_cost\": 500000.0\n        }\n    ],\n    \"reason_for_export\": \"Resale\",\n    \"additional_costs\": [\n        {\"reason\": \"VAT\", \"amount\": 104500},\n        {\"reason\": \"Brokerage Fees\", \"amount\": 18000},\n        {\"reason\": \"Insurance & Freight (CIF)\", \"amount\": 50000},\n        {\"reason\": \"Port/Terminal Handling\", \"amount\": 10000}\n    ],\n    \"signature\": \"KKG\",\n    \"title\": \"Manager\",\n    \"date\": \"2024-06-13\",\n    \"invoice_total\": \"682500\",\n    \"hs_code\": \"960810\",\n    \"incoterm\": \"CIF\",\n    \"exporting_country\": \"India\",\n    \"importing_country\": \"Germany\",\n    \"product_description\": \"Ball point pens clickable blue ink\"\n}",
+    "response": this.downloadresponse,
     "form_response": "",
     "download_url": ""
 }
     this.myService.download(prompt).subscribe({
       next: (response) => {
         console.log(response);
+        window.open(response.download_url, '_blank');
       },
       error: (error) => {
         console.error(error);

@@ -52,7 +52,6 @@
           {{ m.timeStamp | date : "shortTime" }}
         </div>
       </div>
-      <button (click)="download()">Download</button>
     </ng-container>
 
     <div *ngIf="isLoading" class="chat-message bot loader">
@@ -120,6 +119,12 @@
       [disabled]="(!newMsg.trim() && !selectedFile) || isLoading"
     >
       Send
+    </button>
+    <button
+      class="send-btn"
+      (click)="download()"
+    >
+      Download
     </button>
   </div>
 </div>
