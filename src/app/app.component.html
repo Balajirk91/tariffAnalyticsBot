@@ -1,6 +1,6 @@
 <div class="chatbot-container">
   <div class="chat-header">
-    <h2 class="title">Invoice Assistant</h2>
+    <h2 class="title">Gen AI Trade and Invoice Assistant</h2>
     <button
       class="clear-chat-btn"
       (click)="clearChatHistory()"
@@ -30,57 +30,10 @@
         class="chat-message bot"
         #lastBotMessageElem
       >
-        <div class="message-body">{{ m.body.message }}</div>
-        <form
-          *ngIf="!m.isRequest && m.body.formFields"
-          [formGroup]="formGroup"
-          class="inline-form"
-          (ngSubmit)="onFormSubmit()"
-        >
-          <div *ngFor="let field of m.body.formFields">
-            <label>{{ field.label }}</label>
-
-            <ng-container [ngSwitch]="field.type">
-              <input
-                *ngSwitchCase="'text'"
-                [formControlName]="field.name"
-                type="text"
-              />
-              <input
-                *ngSwitchCase="'number'"
-                [formControlName]="field.name"
-                type="number"
-              />
-              <textarea
-                *ngSwitchCase="'textarea'"
-                [formControlName]="field.name"
-              ></textarea>
-              <input
-                *ngSwitchDefault
-                [formControlName]="field.name"
-                type="text"
-              />
-            </ng-container>
-
-            <div
-              class="validation-error"
-              *ngIf="
-                formGroup.get(field.name)?.invalid &&
-                formGroup.get(field.name)?.touched
-              "
-            >
-              This field is required.
-            </div>
-          </div>
-
-          <button
-            type="submit"
-            class="form-submit-btn"
-            [disabled]="formGroup.invalid || isLoading"
-          >
-            Submit
-          </button>
-        </form>
+        <div
+          class="message-body"
+          [innerHTML]="formatMessage(m.body.message)"
+        ></div>
 
         <div class="message-timestamp">
           {{ m.timeStamp | date : "shortTime" }}
@@ -99,6 +52,7 @@
           {{ m.timeStamp | date : "shortTime" }}
         </div>
       </div>
+      <button (click)="download()">Download</button>
     </ng-container>
 
     <div *ngIf="isLoading" class="chat-message bot loader">
@@ -135,6 +89,7 @@
         title="Attach file"
       >
         <input
+          #fileInput
           type="file"
           (change)="onFileSelected($event)"
           [disabled]="isLoading"

@@ -1,14 +1,15 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { AppService } from './app.service';
 import { v4 as uuidV4 } from 'uuid';
-import { FormGroup } from '@angular/forms';
+import { FormArray, FormControl, FormGroup } from '@angular/forms';
 import { FormBuilder } from './formbuilder';
 
-interface Message {
+export interface Message {
   body: {
-    message: string;
+    message: any;
     userid: any;
-    formFields?: Fields[];
+    formFields?: Field[] | null;
+    base64pdf?: string;
   };
   isRequest: boolean;
   timeStamp: number;
@@ -16,14 +17,20 @@ interface Message {
 
 export interface GeneralForm {
   type: string;
-  fields: Fields[];
+  fields: Field[];
 }
 
-export interface Fields {
-  label: string; 
+export interface Field {
+  label: string;
   name: string;
-  type: string; 
+  type: string;
   required: boolean;
+
+  // Optional properties for field-specific logic
+  value?: any; // For default text/number
+  default?: any; // For initial values like "Gold", "India", etc.
+  options?: string[]; // For select dropdowns
+  fields?: Field[]; // For nested/dynamic_list fields
 }
 
 @Component({
@@ -38,11 +45,17 @@ export class AppComponent implements OnInit {
   selectedFile: File | null = null;
   generatedUserId: any;
   formGroup: any;
-  formGroupFields = [];
+  formGroupFields: Field[] = [];
+  base64String: any;
 
-  constructor(private myService: AppService,private formbuilder: FormBuilder) {}
+  constructor(
+    private myService: AppService,
+    private formbuilder: FormBuilder
+  ) {}
   // Scroll to latest user request
-  @ViewChild('lastUserMessageElem') set lastUserMessageElem(el: ElementRef | undefined) {
+  @ViewChild('lastUserMessageElem') set lastUserMessageElem(
+    el: ElementRef | undefined
+  ) {
     if (el) {
       setTimeout(() => {
         el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -51,7 +64,9 @@ export class AppComponent implements OnInit {
   }
 
   // Scroll to latest bot response
-  @ViewChild('lastBotMessageElem') set lastBotMessageElem(el: ElementRef | undefined) {
+  @ViewChild('lastBotMessageElem') set lastBotMessageElem(
+    el: ElementRef | undefined
+  ) {
     if (el) {
       setTimeout(() => {
         el.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -59,6 +74,9 @@ export class AppComponent implements OnInit {
     }
   }
 
+  @ViewChild('fileInput') fileInput!: ElementRef<HTMLInputElement>;
+
+// Use this.fileInput.nativeElement.value = '' whenever needed
 
 
   ngOnInit(): void {
@@ -67,19 +85,21 @@ export class AppComponent implements OnInit {
   }
 
   generateUserIdAndInitialMessage() {
-    this.generatedUserId = uuidV4();
-    setTimeout(() => {
-      this.messages.push({
-        body: {
-          message: 'Hi, I’m your Commercial Invoice Assistant. How can I assist you today?',
-          userid: this.generatedUserId
-        },
-        isRequest: false,
-        timeStamp: Date.now(),
-      });
-      this.isLoading = false;
-    }, 1000);
-  }
+  this.generatedUserId = uuidV4();
+  this.generatedUserId = this.generatedUserId.split('-')[0]
+  setTimeout(() => {
+    this.messages.push({
+      body: {
+        message:
+          "Hi! I’m your Gen AI Trade and Invoice Assistant. How can I assist you today?\nYou can upload your invoice for processing, or I can help you generate a new invoice and provide a summary.",
+        userid: this.generatedUserId,
+      },
+      isRequest: false,
+      timeStamp: Date.now(),
+    });
+    this.isLoading = false;
+  }, 1000);
+}
 
   handleEnter(event: any) {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -88,147 +108,111 @@ export class AppComponent implements OnInit {
     }
   }
 
-  onFileSelected(event: Event) {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      this.selectedFile = input.files[0];
-    }
+  onFileSelected(event: any): void {
+  const fileInput = event.target as HTMLInputElement;
+  const file = fileInput.files && fileInput.files.length > 0 ? fileInput.files[0] : null;
+  
+  if (file) {
+    this.selectedFile = file;
+    this.convertFileToBase64(file);
+  } else {
+    console.warn('No file selected');
   }
+
+  // Reset file input so change event fires even if same file selected next time
+  fileInput.value = '';
+}
+
+
+  convertFileToBase64(file: File): void {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result === 'string') {
+        this.base64String = result.split(',')[1];
+      }
+    };
+
+    reader.onerror = (error) => {
+      console.error('FileReader error:', error);
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+
 
   onFormSubmit() {
-  if (this.formGroup.invalid) {
-    this.formGroup.markAllAsTouched();
-    return;
+    if (this.formGroup.invalid) {
+      this.formGroup.markAllAsTouched();
+      return;
+    }
+
+    const formValues = this.formGroup.value;
+
+    // Convert values to "Label: value" format
+    const messageText = Object.entries(formValues)
+      .map(([key, value]) => `${this.toLabel(key)}: ${value}`)
+      .join(', ');
+
+    this.newMsg = messageText;
+    this.sendMessage();
+    // Optionally clear the form after submission
+    this.formGroup = null;
+    this.formGroupFields = [];
   }
 
-  const formValues = this.formGroup.value;
-
-  // Convert values to "Label: value" format
-  const messageText = Object.entries(formValues)
-    .map(([key, value]) => `${this.toLabel(key)}: ${value}`)
-    .join(', ');
-
-  this.newMsg = messageText;
-  this.sendMessage();
-  // Optionally clear the form after submission
-  this.formGroup = null;
-  this.formGroupFields = [];
-}
-
-toLabel(str: string): string {
-  return str
-    .replace(/_/g, ' ')
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
-    .replace(/^./, c => c.toUpperCase());
-}
-
+  toLabel(str: string): string {
+    return str
+      .replace(/_/g, ' ')
+      .replace(/([a-z])([A-Z])/g, '$1 $2')
+      .replace(/^./, (c) => c.toUpperCase());
+  }
 
   sendMessage() {
-    if ((!this.newMsg.trim() && !this.selectedFile) || this.isLoading) return;
+  if ((!this.newMsg.trim() && !this.selectedFile) || this.isLoading) return;
 
-    const userText = {
-      message: this.newMsg.trim(),
-      userid: this.generatedUserId
-    }
-    // Show user message
-    this.messages.push({
-      body: {
-        message: userText.message || '[File uploaded]',
-        userid: userText.userid
-      },
-      isRequest: true,
-      timeStamp: Date.now(),
-    });
+  const userText = {
+    message: this.newMsg.trim(),
+    userid: this.generatedUserId,
+    base64pdf: this.base64String || ''
+  };
 
-    this.isLoading = true;
-    this.newMsg = '';
+  // Show user message first
+  this.messages.push({
+    body: {
+      message: userText.message || '[File uploaded]',
+      userid: userText.userid,
+      base64pdf: this.base64String || ''
+    },
+    isRequest: true,
+    timeStamp: Date.now(),
+  });
 
-    const sendToAI = (prompt: any) => {
+  this.isLoading = true;
+  this.newMsg = '';
+
+  const sendToAI = (prompt: any) => {
+    this.selectedFile = null;
+    this.base64String = '';
       this.myService.sendToFoundry(prompt).subscribe({
-        next: async (response) => {
+        next: (response: any) => {
           this.isLoading = false;
-          const mockresponse = {  
-  "type": "form_request",  
-  "fields": [  
-    {  
-      "label": "Exporter Name",  
-      "name": "exporter_name",  
-      "type": "text",  
-      "required": true  
-    },  
-    {  
-      "label": "Exporter Address",  
-      "name": "exporter_address",  
-      "type": "textarea",  
-      "required": true  
-    },  
-    {  
-      "label": "Importer Name",  
-      "name": "importer_name",  
-      "type": "text",  
-      "required": true  
-    },  
-    {  
-      "label": "Importer Address",  
-      "name": "importer_address",  
-      "type": "textarea",  
-      "required": true  
-    },  
-    {  
-      "label": "HS Code",  
-      "name": "hs_code",  
-      "type": "text",  
-      "required": true  
-    },  
-    {  
-      "label": "Quantity",  
-      "name": "quantity",  
-      "type": "number",  
-      "required": true  
-    },  
-    {  
-      "label": "Value",  
-      "name": "value",  
-      "type": "number",  
-      "required": true  
-    },  
-    {  
-      "label": "Incoterm",  
-      "name": "incoterm",  
-      "type": "text",  
-      "required": true  
-    },  
-    {  
-      "label": "Currency",  
-      "name": "currency",  
-      "type": "text",  
-      "required": true  
-    }  
-  ],  
-  "preset": {  
-    "exporting_country": "Russia",  
-    "importing_country": "India"  
-  }  
-}
-          const formGroup = await this.buildFormFromAIResponse(mockresponse);
-          this.formGroup = formGroup;
           this.messages.push({
             body: {
               message: response,
               userid: this.generatedUserId,
-              formFields: mockresponse?.fields ?? null
+              formFields: response?.fields ?? null
             },
             isRequest: false,
             timeStamp: Date.now(),
           });
-          console.log("this.formGroup", this.formGroup);
-          
         },
         error: () => {
           this.messages.push({
             body: {
               message: 'Error: Unable to get response',
-              userid: this.generatedUserId
+              userid: this.generatedUserId,
             },
             isRequest: false,
             timeStamp: Date.now(),
@@ -236,47 +220,72 @@ toLabel(str: string): string {
           this.isLoading = false;
         },
       });
-    };
+  };
+  sendToAI(userText);
+}
 
-    if (this.selectedFile) {
-      this.myService.uploadFileToBlob(this.selectedFile).subscribe({
-        next: (url: string) => {
-          const combinedPrompt = `${userText}\n\nHere is the file: ${url}`;
-          sendToAI(combinedPrompt);
-          this.selectedFile = null;
-        },
-        error: () => {
-          this.messages.push({
-            body: {
-              message: 'Error uploading file.',
-              userid: this.generatedUserId
-            },
-            isRequest: false,
-            timeStamp: Date.now(),
-          });
-          this.isLoading = false;
-        },
-      });
-    } else {
-      sendToAI(userText);
-    }
-  }
 
   async buildFormFromAIResponse(response: any): Promise<FormGroup> {
     const generalFormConfig: GeneralForm[] = [
-    {
-      type: response.type, // "form_request"
-      fields: response.fields
-    }
-  ];
-  const formGroup = this.formbuilder.createFormGroup(generalFormConfig);
+      {
+        type: response.type, // "form_request"
+        fields: response.fields,
+      },
+    ];
+    const formGroup = this.formbuilder.createFormGroup(generalFormConfig);
 
-  return formGroup;
-}
+    return formGroup;
+  }
 
   clearChatHistory() {
     this.messages = [];
-     this.isLoading = true;
+    this.isLoading = true;
     this.generateUserIdAndInitialMessage();
+  }
+
+  objectKeys(obj: any): string[] {
+    console.log('obj', obj);
+
+    return Object.keys(obj);
+  }
+
+  // Format message to replace URLs with clickable links
+
+  //   formatMessage(message: string): string {
+  //   if (!message) return '';
+
+  //   const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+  //   // Replace all URLs with clickable "Download PDF" links
+  //   return message.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">Download PDF</a>');
+  // }
+
+  // Format message to download the pdf directly
+
+  formatMessage(message: any): string {
+    if (!message.response) return message;
+
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+
+    return message.response.replace(
+      urlRegex,
+      `<a href="$1" download target="_blank" rel="noopener noreferrer">Download PDF</a>`
+    );
+  }
+
+  download() {
+    const prompt = {
+    "response": "{\n    \"shipper_name\": \"KKG Exporters\",\n    \"shipper_address\": \"14, Mount Road, Chennai, India\",\n    \"shipper_contact\": \"KKG\",\n    \"shipper_phone\": \"+12315132\",\n    \"consignee_name\": \"Balaji Importers\",\n    \"consignee_address\": \"15, Elizabeth Road, Germany\",\n    \"consignee_taxid\": \"NA\",\n    \"consignee_contact\": \"Balaji\",\n    \"consignee_phone\": \"+44123123\",\n    \"producer_name\": \"KKG Exporters\",\n    \"producer_address\": \"14, Mount Road, Chennai, India\",\n    \"sold_to_party\": \"Balaji Importers\",\n    \"sold_to_party_taxid\": \"NA\",\n    \"sold_to_party_contact\": \"Balaji\",\n    \"sold_to_party_phone\": \"+44123123\",\n    \"transaction_party\": \"Not Related\",\n    \"gross_weight\": \"200kg\",\n    \"terms_of_sale\": \"CIF\",\n    \"brokerage_charges\": \"Importer\",\n    \"invoice_number\": \"INV-2024-001\",\n    \"invoice_date\": \"2024-06-13\",\n    \"currency\": \"Rupees\",\n    \"items\": [\n        {\n            \"country_of_origin\": \"India\",\n            \"description\": \"960810 - Ball point pens clickable blue ink\",\n            \"quantity\": 100000,\n            \"unit_cost\": 5.0,\n            \"total_cost\": 500000.0\n        }\n    ],\n    \"reason_for_export\": \"Resale\",\n    \"additional_costs\": [\n        {\"reason\": \"VAT\", \"amount\": 104500},\n        {\"reason\": \"Brokerage Fees\", \"amount\": 18000},\n        {\"reason\": \"Insurance & Freight (CIF)\", \"amount\": 50000},\n        {\"reason\": \"Port/Terminal Handling\", \"amount\": 10000}\n    ],\n    \"signature\": \"KKG\",\n    \"title\": \"Manager\",\n    \"date\": \"2024-06-13\",\n    \"invoice_total\": \"682500\",\n    \"hs_code\": \"960810\",\n    \"incoterm\": \"CIF\",\n    \"exporting_country\": \"India\",\n    \"importing_country\": \"Germany\",\n    \"product_description\": \"Ball point pens clickable blue ink\"\n}",
+    "form_response": "",
+    "download_url": ""
+}
+    this.myService.download(prompt).subscribe({
+      next: (response) => {
+        console.log(response);
+      },
+      error: (error) => {
+        console.error(error);
+      }
+    });
   }
 }

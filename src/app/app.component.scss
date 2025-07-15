@@ -1,13 +1,11 @@
 .chatbot-container {
-  max-width: 80%;
-  height: 600px;
-  margin: 20px auto;
+  height: 650px;
   display: flex;
   flex-direction: column;
   background: #fff;
   border-radius: 15px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   overflow: hidden;
 }
 
@@ -19,7 +17,7 @@
   font-size: 1.25rem;
   user-select: none;
   display: flex;
-  width:100%;
+  width: 100%;
   flex-direction: row;
   align-items: center;
 }
@@ -55,7 +53,7 @@
 }
 
 .chat-message.user::after {
-  content: '';
+  content: "";
   position: absolute;
   right: -10px;
   bottom: 0;
@@ -73,7 +71,7 @@
 }
 
 .chat-message.bot::after {
-  content: '';
+  content: "";
   position: absolute;
   left: -10px;
   bottom: 0;
@@ -105,7 +103,7 @@
 }
 
 .loader::after {
-  content: '';
+  content: "";
   position: absolute;
   left: -10px;
   bottom: 0;
@@ -142,7 +140,9 @@
 }
 
 @keyframes blink {
-  0%, 80%, 100% {
+  0%,
+  80%,
+  100% {
     opacity: 0;
   }
   40% {
@@ -191,7 +191,7 @@
   max-height: 60px;
   line-height: 1.4;
   color: #333;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .selected-file {
@@ -287,16 +287,16 @@
 
 .send-btn:disabled {
   background-color: #a0aec0;
-  color:#ccc;
+  color: #ccc;
   cursor: not-allowed;
 }
 
 .title {
-  width:75%
+  width: 75%;
 }
 
 .clear-chat-btn {
-   background: #ffb500;
+  background: #ffb500;
   color: #351c15;
   border: none;
   padding: 10px 20px;
@@ -312,7 +312,7 @@
 
 .clear-chat-btn:disabled {
   background-color: #a0aec0;
-  color:#ccc;
+  color: #ccc;
   cursor: not-allowed;
 }
 
@@ -342,6 +342,29 @@
   margin-top: 2px;
 }
 
+.inline-form input,
+.inline-form textarea,
+.inline-form select,
+.inline-form input[type="date"] {
+  width: 100%;
+  padding: 6px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  box-sizing: border-box;
+  appearance: none; /* Removes default arrow on select (for full control) */
+  -webkit-appearance: none; /* Safari */
+  -moz-appearance: none; /* Firefox */
+}
+
+.inline-form select {
+  background-image: url("data:image/svg+xml;utf8,<svg fill='%23351c15' height='24' viewBox='0 0 24 24' width='24' xmlns='http://www.w3.org/2000/svg'><path d='M7 10l5 5 5-5z'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px 16px;
+  padding-right: 30px; /* make space for the arrow */
+}
+
 .form-submit-btn {
   background: #351c15;
   color: #ffb500;
@@ -359,5 +382,3 @@
   color: #666;
   cursor: not-allowed;
 }
-
-
